@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FREEFLIX - HLS/MPD Player</title>
+  
+  <!-- Player CSS -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.6.8/plyr.css" />
+  <!-- Shaka Player UI CSS (Crucial for styling) -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/shaka-player@latest/dist/controls.css">
+
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* New Color Palette and Root Variables */
+    :root {
+      --bg-start: #111827;
+      --bg-end: #1d233a;
+      --text: #f0f2f5;
+      --text-muted: #9ca3af;
+      --accent: #a855f7;
+      --accent-hover: #9333ea;
+      --card-bg: rgba(31, 41, 55, 0.5);
+      --input-bg: #374151;
+      --border-color: rgba(168, 85, 247, 0.2);
+    }
+
+    /* --- Base & Body Styles --- */
+    body {
+      background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* --- Navbar --- */
+    .navbar {
+      padding: 1rem 2rem;
+      background: transparent;
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: 2rem;
+    }
+    .navbar .logo {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -1px;
+      text-shadow: 0 0 10px var(--accent);
+    }
+
+    /* --- Main Container & Cards --- */
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 0 2rem 2rem;
+    }
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px); /* For Safari */
+      padding: 2.5rem;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      margin-bottom: 2rem;
+    }
+    #playerArea {
+      padding: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      min-height: 450px; /* Default height for the player area */
+    }
+
+    /* --- Form Elements --- */
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    input, select, button, textarea {
+      width: 100%;
+      padding: 15px;
+      margin-top: 0.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
+    }
+    button {
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+      border: none;
+    }
+    button:hover {
+      background: var(--accent-hover);
+    }
+    textarea {
+      resize: none;
+    }
+    h3 {
+      margin-top: 0;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    /* --- Media Player Styles --- */
+    iframe, video {
+      width: 100%;
+      height: 100%; /* Make video elements fill their container */
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    /* --- Clappr Player Fixes --- */
+    .clappr-container {
+      width: 100% !important;
+      height: 450px !important;
+      border-radius: 12px !important;
+      overflow: hidden !important;
+      border: 1px solid var(--border-color) !important;
+    }
+    
+    /* --- Shaka Player Custom Skin --- */
+    
+    /* Main container for Shaka Player */
+    [data-shaka-player-container] {
+      border-radius: 12px !important;
+      overflow: hidden !important;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    /* Big play button in the center - NEW PULSE EFFECT */
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(1.6);
+        opacity: 0;
+      }
+    }
+
+    [data-shaka-player-container] .shaka-big-play-button {
+      position: relative; /* Needed for the pseudo-element */
+      width: 80px !important;
+      height: 80px !important;
+      background-color: rgba(31, 41, 55, 0.7) !important;
+      border: 2px solid var(--accent) !important;
+      border-radius: 50% !important;
+      opacity: 1 !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+
+    [data-shaka-player-container] .shaka-big-play-button svg {
+      width: 50% !important;
+      height: 50% !important;
+      fill: var(--text) !important;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    [data-shaka-player-container] .shaka-big-play-button:hover {
+      background-color: rgba(31, 41, 55, 0.9) !important; /* Make it slightly darker on hover */
+      transform: scale(1.1); /* Keep the subtle scale */
+    }
+
+    /* This is the pulsing ring */
+    [data-shaka-player-container] .shaka-big-play-button::before {
+      content: '';
+      position: absolute;
+      left: -2px; /* Offset for the border */
+      top: -2px; /* Offset for the border */
+      width: 100%;
+      height: 100%;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      opacity: 0;
+      z-index: -1;
+      transform: scale(1);
+    }
+
+    [data-shaka-player-container] .shaka-big-play-button:hover::before {
+      animation: pulse-ring 1.5s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+    }
+    
+    /* Main controls container at the bottom */
+    [data-shaka-player-container] .shaka-controls-container {
+      font-family: 'Inter', sans-serif !important;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%) !important;
+      padding: 0 15px 5px 15px !important;
+    }
+    
+    /* All small control buttons */
+    [data-shaka-player-container] .shaka-controls-button-panel button {
+      color: var(--text) !important;
+    }
+    [data-shaka-player-container] .shaka-controls-button-panel button:hover {
+      background: rgba(168, 85, 247, 0.2) !important;
+    }
+    
+    /* Progress bar styling */
+    [data-shaka-player-container] .shaka-seek-bar-container {
+      height: 8px !important; /* Make it a bit thicker */
+      border-radius: 4px !important;
+      transition: height 0.2s ease !important;
+    }
+    [data-shaka-player-container] .shaka-seek-bar-container:hover {
+      height: 12px !important; /* Enlarge on hover for easier seeking */
+    }
+    [data-shaka-player-container] .shaka-seek-bar-container .shaka-range-container {
+      background-color: rgba(255, 255, 255, 0.2) !important;
+    }
+    [data-shaka-player-container] .shaka-seek-bar-container .shaka-played-range {
+      background: var(--accent) !important;
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.7) !important;
+    }
+    [data-shaka-player-container] .shaka-seek-bar-container .shaka-buffered-range {
+      background: rgba(255, 255, 255, 0.4) !important;
+    }
+
+    /* Time display */
+    [data-shaka-player-container] .shaka-current-time {
+      color: var(--text) !important;
+      font-weight: 500 !important;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.8) !important;
+    }
+    
+    /* Overflow menu ('...') styling */
+    [data-shaka-player-container] .shaka-overflow-menu {
+      background: var(--card-bg) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+    }
+    [data-shaka-player-container] .shaka-overflow-menu button {
+      color: var(--text) !important;
+    }
+    [data-shaka-player-container] .shaka-overflow-menu button:hover {
+      background: rgba(168, 85, 247, 0.2) !important;
+      color: var(--accent) !important;
+    }
+    [data-shaka-player-container] .shaka-overflow-menu [aria-selected="true"] {
+      background: var(--accent) !important;
+      color: white !important;
+    }
+    [data-shaka-player-container] .shaka-overflow-menu [aria-selected="true"]:hover {
+      background: var(--accent-hover) !important;
+    }
+    
+    /* Loading spinner */
+    [data-shaka-player-container] .shaka-spinner-svg {
+      stroke: var(--accent) !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="logo">FREEFLIX</div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <form id="playerForm" onsubmit="generatePlayer(); return false;">
+        <label for="videoUrl">Enter Video URL (M3U8 or MPD)</label>
+        <input type="url" id="videoUrl" placeholder="https://example.com/stream.m3u8" required>
+
+        <label for="playerSelect">Select a Player</label>
+        <select id="playerSelect" required>
+          <option value="">-- Choose Player --</option>
+          <optgroup label="HLS (m3u8)">
+            <option value="jw_hls">JW Player (HLS)</option>
+            <option value="clappr">Clappr</option>
+            <option value="plyr">Plyr</option>
+          </optgroup>
+          <optgroup label="DASH (mpd)">
+            <option value="jw_dash">JW Player (DASH)</option>
+            <option value="shaka">Shaka Player</option>
+          </optgroup>
+        </select>
+
+        <button type="submit">Generate Player</button>
+      </form>
+    </div>
+
+    <div id="playerArea" class="card"></div>
+
+    <div class="card">
+      <h3>Embed Code</h3>
+      <textarea id="embedCode" readonly rows="4" placeholder="Player embed code will appear here..."></textarea>
+    </div>
+  </div>
+
+  <!-- Player Scripts (these must remain in the body to be accessible) -->
+  <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/shaka-player@latest/dist/shaka-player.compiled.js"></script>
+  <!-- Shaka Player UI Script (Crucial for functionality) -->
+  <script src="https://cdn.jsdelivr.net/npm/shaka-player@latest/dist/shaka-player.ui.js"></script>
+  <script src="https://cdn.plyr.io/3.6.8/plyr.polyfilled.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jwplayer.com/libraries/IDzF9Zmk.js"></script> <!-- Replace with your JW license key -->
+
+  <script>
+    let currentPlayer = null;
+
+    function parseClearKey(url) {
+      const match = url.match(/\|drmScheme=clearkey&drmLicense=([^:]+):([a-fA-F0-9]+)/);
+      if (match) {
+        return { keyId: match[1], key: match[2] };
+      }
+      return null;
+    }
+
+    function destroyCurrentPlayer() {
+      if (currentPlayer) {
+        try {
+          if (currentPlayer.destroy) {
+            currentPlayer.destroy();
+          } else if (currentPlayer.remove) {
+            currentPlayer.remove();
+          }
+        } catch (e) {
+          console.error('Error destroying player:', e);
+        }
+        currentPlayer = null;
+      }
+      
+      if (window.jwplayer && window.jwplayer("jwPlayer")) {
+        try {
+          window.jwplayer("jwPlayer").remove();
+        } catch (e) { console.error('Error removing JW Player:', e); }
+      }
+      
+      if (window.hls) {
+        try {
+          window.hls.destroy();
+        } catch (e) { console.error('Error destroying HLS:', e); }
+        window.hls = null;
+      }
+    }
+
+    function generatePlayer() {
+      const urlInput = document.getElementById("videoUrl").value;
+      const type = document.getElementById("playerSelect").value;
+      const area = document.getElementById("playerArea");
+      const embedCode = document.getElementById("embedCode");
+
+      destroyCurrentPlayer();
+      area.innerHTML = "";
+      
+      if (embedCode) { embedCode.value = ""; }
+      if (!urlInput || !type) return;
+
+      let url = urlInput.split('|')[0];
+      const clearkey = parseClearKey(urlInput);
+      
+      const embedUrl = `${location.origin + location.pathname}?embed=true&player=${type}&url=${encodeURIComponent(urlInput)}`;
+      const embedHTML = `<iframe src="${embedUrl}" width="100%" height="450" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+
+      switch (type) {
+        case "jw_hls":
+        case "jw_dash":
+          area.innerHTML = `<div id="jwPlayer"></div>`;
+          const setup = { file: url, width: "100%", height: "100%", autostart: true };
+          if (clearkey && type === "jw_dash") {
+            setup.drm = { clearkey: { keyId: clearkey.keyId, key: clearkey.key } };
+          }
+          currentPlayer = jwplayer("jwPlayer").setup(setup);
+          break;
+
+        case "clappr":
+          area.style.height = '450px';
+          area.style.minHeight = '450px';
+          currentPlayer = new Clappr.Player({
+            source: url, autoPlay: true, parentId: "#playerArea", width: "100%", height: "100%",
+            mediacontrol: { seekbar: "#a855f7", buttons: "#a855f7" }
+          });
+          break;
+
+        case "plyr":
+          area.innerHTML = `<video id="plyrPlayer" playsinline autoplay></video>`;
+          const video = document.getElementById("plyrPlayer");
+          if (Hls.isSupported() && url.endsWith(".m3u8")) {
+            const hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            window.hls = hls;
+          } else { video.src = url; }
+          currentPlayer = new Plyr(video, { autoplay: true });
+          break;
+
+        case "shaka":
+          // Step 1: Create the HTML structure Shaka UI expects
+          area.innerHTML = `<div data-shaka-player-container style="width:100%; height:100%;">
+                                <video data-shaka-player id="shakaVideo" style="width:100%; height:100%;" autoplay></video>
+                            </div>`;
+          
+          const container = area.querySelector('[data-shaka-player-container]');
+          const shakaVideo = document.getElementById('shakaVideo');
+
+          // Step 2: Initialize the player and then the UI
+          const player = new shaka.Player(shakaVideo);
+          const ui = new shaka.ui.Overlay(player, container, shakaVideo);
+          
+          // Add player to global scope for destruction later
+          currentPlayer = player;
+
+          // Optional: Configure the UI
+          ui.configure({
+            'controlPanelElements': [
+              'play_pause', 'time_and_duration', 'spacer', 'volume', 'fullscreen', 'overflow_menu'
+            ],
+            'overflowMenuButtons': [
+              'captions', 'quality', 'language', 'playback_rate', 'picture_in_picture'
+            ],
+            'addBigPlayButton': true,
+          });
+          
+          // Step 3: Configure the player (e.g., for DRM)
+          if (clearkey) {
+            player.configure({
+              drm: { clearKeys: { [clearkey.keyId]: clearkey.key } }
+            });
+          }
+
+          // Step 4: Load the manifest
+          player.load(url).catch(err => {
+            console.error('Shaka load error:', err);
+            area.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text); background: rgba(168, 85, 247, 0.1); border-radius: 12px; border: 1px solid var(--border-color);">
+              <h3 style="color: var(--accent); margin-bottom: 1rem;">❌ Playback Error</h3>
+              <p><strong>Error:</strong> ${err.message}</p>
+              <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
+                This could be due to CORS restrictions, DRM protection, or an invalid stream URL.
+              </p>
+            </div>`;
+          });
+          break;
+
+        default:
+          area.innerHTML = `<p style="padding: 2rem; text-align: center; color: var(--text);">⚠️ Please select a valid player.</p>`;
+      }
+
+      if (embedCode) { embedCode.value = embedHTML; }
+    }
+
+    window.onload = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("embed") === "true") {
+        document.querySelector('.navbar').style.display = 'none';
+        document.querySelector('#playerForm').parentElement.style.display = 'none';
+        document.querySelector('#embedCode').parentElement.style.display = 'none';
+
+        document.body.style.background = '#000';
+        document.body.style.margin = '0';
+        const container = document.querySelector('.container');
+        container.style.maxWidth = '100%';
+        container.style.padding = '0';
+        container.style.margin = '0';
+        const playerArea = document.getElementById('playerArea');
+        playerArea.style.height = '100vh';
+        playerArea.style.borderRadius = '0';
+        playerArea.style.border = 'none';
+        playerArea.style.margin = '0';
+
+        document.getElementById("videoUrl").value = urlParams.get("url") || '';
+        document.getElementById("playerSelect").value = urlParams.get("player") || '';
+        
+        generatePlayer();
+      }
+    };
+
+    window.addEventListener('beforeunload', () => { destroyCurrentPlayer(); });
+  </script>
+</body>
+</html>
