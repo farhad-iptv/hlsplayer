@@ -279,6 +279,27 @@
     [data-shaka-player-container] .shaka-spinner-svg {
       stroke: var(--accent) !important;
     }
+
+    /* --- NEW: Watermark for Embed --- */
+    .watermark {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(17, 24, 39, 0.6); /* --bg-start with alpha */
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      color: rgba(240, 242, 245, 0.8); /* --text with alpha */
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(168, 85, 247, 0.2); /* --border-color */
+      font-size: 12px;
+      font-weight: 500;
+      z-index: 100;
+      pointer-events: none; /* VERY IMPORTANT! Allows clicks to pass through to the player */
+      opacity: 0; /* Start hidden */
+      transition: opacity 0.5s ease-in-out; /* Fade-in effect */
+    }
+
   </style>
 </head>
 <body>
@@ -483,16 +504,30 @@
         container.style.maxWidth = '100%';
         container.style.padding = '0';
         container.style.margin = '0';
+        
         const playerArea = document.getElementById('playerArea');
         playerArea.style.height = '100vh';
         playerArea.style.borderRadius = '0';
         playerArea.style.border = 'none';
         playerArea.style.margin = '0';
+        // NEW: Make the playerArea a positioning context for the watermark
+        playerArea.style.position = 'relative';
 
         document.getElementById("videoUrl").value = urlParams.get("url") || '';
         document.getElementById("playerSelect").value = urlParams.get("player") || '';
         
         generatePlayer();
+
+        // --- NEW: Create and inject the watermark ---
+        const watermark = document.createElement('div');
+        watermark.className = 'watermark';
+        watermark.textContent = 'Powered by FREEFLIX';
+        playerArea.appendChild(watermark);
+
+        // Fade in the watermark after a short delay to be less intrusive
+        setTimeout(() => {
+            watermark.style.opacity = '1';
+        }, 1500); // 1.5 second delay
       }
     };
 
